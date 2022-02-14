@@ -1,7 +1,8 @@
 <script>
     import mermaid from 'mermaid';
-    import { onMount } from 'svelte';
+    import {afterUpdate, onMount} from 'svelte';
 
+    export let doc = ""
     let graph = null;
 
     mermaid.initialize({
@@ -9,11 +10,20 @@
         theme: 'forest',
     });
 
+    const rerender = () => {
+        mermaid.mermaidAPI.render('graph-div', doc, (svgCode) => {
+            graph.innerHTML = svgCode;
+        });
+    }
+
     onMount(() => {
-        mermaid.init([ graph ]);
+        rerender()
     });
+
+    afterUpdate(() => {
+        rerender()
+    })
 </script>
 
 <pre bind:this={graph}>
-        <slot></slot>
 </pre>

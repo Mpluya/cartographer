@@ -20,7 +20,6 @@
         inst.onDidChangeModelContent = (e) => {
             document = inst.getValue()
         }
-        // todo: destructor
     })
 
 

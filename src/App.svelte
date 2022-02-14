@@ -1,19 +1,14 @@
 <script>
-    import Monaco from "./lib/Monaco.svelte";
     import Viz from "./lib/Viz.svelte";
-
-    import {startupDoc} from "./startup.js";
-
-    let document = startupDoc
-
+    import SupplyChainEditor from "./lib/SupplyChainEditor.svelte";
 </script>
 
 <main>
     <h1>Cartographer Live Editor</h1>
 
-    <Monaco bind:document/>
+    <SupplyChainEditor></SupplyChainEditor>
 
-    <Viz document={document}/>
+    <Viz/>
 
 </main>
 
