@@ -16,12 +16,25 @@ package integration
 
 import (
 	"io"
+	"os"
 	"path/filepath"
 
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 const DebugControlPlane = false
+
+// GetWaitTimeout returns the time to wait for a call to the APIServer
+// If in CI, we should give the API server a lot of time to respond.
+// When testing, we keep it short for faster iterations, however
+// you can use CI=true when running your tests if flakes are causing you
+// grief.
+func GetWaitTimeout() string {
+	if os.Getenv("CI") == "true" {
+		return "10s"
+	}
+	return "1s"
+}
 
 func CreateTestEnv(workingDir string, out io.Writer) *envtest.Environment {
 	testEnv := &envtest.Environment{

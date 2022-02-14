@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	. "github.com/vmware-tanzu/cartographer/tests/integration"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -150,7 +151,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					kind: Runnable
 					metadata:
 					  namespace: %s
-					  name: my-runnable
+					  name: my-runnable-%s
 					spec:
 					  serviceAccountName: %s
 					  runTemplateRef: 
@@ -160,9 +161,13 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					  inputs:
 					    key: val
 					`,
-					testNS, serviceAccountName, testNS)
+					testNS,testNS, serviceAccountName, testNS)
+
+				// Log the content of runnable yaml here
 
 				runnableDefinition = createNamespacedObject(ctx, runnableYaml, testNS)
+
+
 			})
 
 			AfterEach(func() {
@@ -176,12 +181,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 				Eventually(func() (int, error) {
 					err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 					return len(resourceList.Items), err
-				}).Should(Equal(1))
+				}, GetWaitTimeout()).Should(Equal(1))
 
 				Consistently(func() (int, error) {
 					err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 					return len(resourceList.Items), err
-				}, "2s").Should(BeNumerically("<=", 1))
+				}, "1s").Should(BeNumerically("<=", 1))
 
 				Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 				Expect(resourceList.Items[0].Spec.ScopeSelector.MatchExpressions[0].Values).To(ConsistOf("val"))
@@ -198,12 +203,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "3s").Should(Equal(2))
+					}, GetWaitTimeout()).Should(Equal(2))
 
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "2s").Should(Equal(2))
+					}, "1s").Should(Equal(2))
 
 					Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 					Expect(resourceList.Items[1].Name).To(ContainSubstring("my-stamped-resource-"))
@@ -225,13 +230,18 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}).Should(Equal(1))
+					}, GetWaitTimeout()).Should(Equal(1))
+
+
+					Expect(resourceList.Items[0].Labels["carto.run/runnable-name"]).To(Equal("my-runnable-" + testNS))
+
 
 					// Ensure that first object has been stamped, and status update reconcile of runnable has occurred
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
+						//fmt.Printf("---------\nOMG: %+v\n", resourceList)
 						return len(resourceList.Items), err
-					}, "2s").Should(BeNumerically("<=", 1))
+					}, "1s").Should(BeNumerically("<=", 1))
 
 					Expect(AlterFieldOfNestedStringMaps(runTemplateDefinition.Object, "spec.template.metadata.labels.focus", "other-things")).To(Succeed())
 					Expect(c.Update(ctx, runTemplateDefinition, &client.UpdateOptions{})).To(Succeed())
@@ -239,12 +249,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}).Should(Equal(2))
+					}, GetWaitTimeout()).Should(Equal(2))
 
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "2s").Should(BeNumerically("<=", 2))
+					}, "1s").Should(BeNumerically("<=", 2))
 
 					Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 					Expect(resourceList.Items[1].Name).To(ContainSubstring("my-stamped-resource-"))
@@ -405,12 +415,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}).Should(Equal(1))
+					}, GetWaitTimeout()).Should(Equal(1))
 
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "2s").Should(BeNumerically("<=", 1))
+					}, "1s").Should(BeNumerically("<=", 1))
 
 					Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 					Expect(resourceList.Items[0].Spec.ScopeSelector.MatchExpressions[0].Values).To(ConsistOf("polo-production-stage"))
@@ -464,12 +474,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}).Should(Equal(1))
+					}, GetWaitTimeout()).Should(Equal(1))
 
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "2s").Should(BeNumerically("<=", 1))
+					}, "1s").Should(BeNumerically("<=", 1))
 
 					Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 					Expect(resourceList.Items[0].Spec.ScopeSelector.MatchExpressions[0].Values).To(ConsistOf("polo-production-stage"))
@@ -543,12 +553,12 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 					Eventually(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}).Should(Equal(1))
+					}, GetWaitTimeout()).Should(Equal(1))
 
 					Consistently(func() (int, error) {
 						err := c.List(ctx, resourceList, &client.ListOptions{Namespace: testNS})
 						return len(resourceList.Items), err
-					}, "2s").Should(BeNumerically("<=", 1))
+					}, "1s").Should(BeNumerically("<=", 1))
 
 					Expect(resourceList.Items[0].Name).To(ContainSubstring("my-stamped-resource-"))
 					Expect(resourceList.Items[0].Spec.ScopeSelector.MatchExpressions[0].Values).To(ConsistOf("polo-production-stage"))
@@ -628,7 +638,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(1))
+			}, GetWaitTimeout()).Should(HaveLen(1))
 
 			By("reflecting status when succeeded is true")
 			testToUpdate := &testsList.Items[0]
@@ -649,7 +659,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			err := c.Status().Update(ctx, testToUpdate)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(getRunnableTestStatus, "10s").Should(MatchFields(IgnoreExtras, Fields{
+			Eventually(getRunnableTestStatus, GetWaitTimeout()).Should(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal("Ready"),
 				"Status": Equal(metav1.ConditionStatus("True")),
 				"Reason": Equal("LifeIsGood"),
@@ -700,7 +710,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			err = c.Status().Update(ctx, testToUpdate)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(getRunnableTestStatus, "10s").Should(MatchFields(IgnoreExtras, Fields{
+			Eventually(getRunnableTestStatus, GetWaitTimeout()).Should(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal("Ready"),
 				"Status": Equal(metav1.ConditionStatus("True")),
 				"Reason": Equal("LifeIsGreat"),
@@ -810,7 +820,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(1))
+			}, GetWaitTimeout()).Should(HaveLen(1))
 
 			// This is in order to ensure gen 1 object and gen 2 object have different creationTimestamps
 			time.Sleep(time.Second)
@@ -823,7 +833,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(2))
+			}, GetWaitTimeout()).Should(HaveLen(2))
 
 			// This is in order to ensure gen 2 object and gen 3 object have different creationTimestamps
 			// Gen 3 object is needed to demonstrate behaviour when the most recently submitted is not successful
@@ -837,7 +847,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(3))
+			}, GetWaitTimeout()).Should(HaveLen(3))
 		})
 
 		AfterEach(func() {
@@ -860,7 +870,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(1))
+			}, GetWaitTimeout()).Should(HaveLen(1))
 
 			testToUpdate := &testsList.Items[0]
 			testToUpdate.Status.Conditions = []metav1.Condition{
@@ -881,7 +891,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			err := c.Status().Update(ctx, testToUpdate)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(getRunnableTestStatus, "10s").Should(MatchFields(IgnoreExtras, Fields{
+			Eventually(getRunnableTestStatus, GetWaitTimeout()).Should(MatchFields(IgnoreExtras, Fields{
 				"Message": Equal("this is generation 2"),
 			}))
 
@@ -894,7 +904,7 @@ var _ = Describe("Stamping a resource on Runnable Creation", func() {
 			Eventually(func() ([]resources.TestObj, error) {
 				err := c.List(ctx, testsList, opts...)
 				return testsList.Items, err
-			}).Should(HaveLen(1))
+			}, GetWaitTimeout()).Should(HaveLen(1))
 
 			testToUpdate = &testsList.Items[0]
 			testToUpdate.Status.Conditions = []metav1.Condition{

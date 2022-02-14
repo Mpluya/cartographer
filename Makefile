@@ -69,9 +69,16 @@ generate: clean-fakes
 test-unit: test-gen-objects
 	$(GINKGO) -r pkg
 
+
+ifeq ($CI, "true")
+	export GOMEGA_DEFAULT_EVENTUALLY_TIMEOUT = 10s
+	export GOMEGA_DEFAULT_CONSISTENTLY_DURATION = 2s
+endif
+
 .PHONY: test-integration
-test-integration: test-gen-manifests test-gen-objects
-	$(GINKGO) -r tests/integration
+test-integration: test-gen-manifests test-gen-objects export GOMEGA_DEFAULT_EVENTUALLY_TIMEOUT
+	echo "Eventually: $${GOMEGA_DEFAULT_EVENTUALLY_TIMEOUT}"
+	$(GINKGO) -r tests/integration;
 
 .PHONY: test-kuttl
 test-kuttl: build test-gen-manifests

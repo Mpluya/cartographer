@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gstruct"
+	. "github.com/vmware-tanzu/cartographer/tests/integration"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,7 +82,7 @@ var _ = Describe("DeliverableReconciler", func() {
 			obj.SetGroupVersionKind(expectedObj.GroupVersionKind())
 			_ = c.Get(ctx, client.ObjectKey{Name: expectedObj.GetName(), Namespace: testNS}, obj)
 			return obj.UnstructuredContent()["spec"]
-		}).Should(Equal(expectedObj.UnstructuredContent()["spec"]), fmt.Sprintf("failed on obj name: %s", expectedObj.GetName()))
+		}, GetWaitTimeout()).Should(Equal(expectedObj.UnstructuredContent()["spec"]), fmt.Sprintf("failed on obj name: %s", expectedObj.GetName()))
 	}
 
 	var updateObservedGenerationOfTest = func(ctx context.Context, name string) {
@@ -90,7 +91,7 @@ var _ = Describe("DeliverableReconciler", func() {
 		Eventually(func() error {
 			err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: testNS}, testToUpdate)
 			return err
-		}).Should(BeNil())
+		}, GetWaitTimeout()).Should(BeNil())
 
 		testToUpdate.Status.ObservedGeneration = testToUpdate.Generation
 		err := c.Status().Update(ctx, testToUpdate)
@@ -103,7 +104,7 @@ var _ = Describe("DeliverableReconciler", func() {
 		Eventually(func() error {
 			err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: testNS}, testToUpdate)
 			return err
-		}).Should(BeNil())
+		}, GetWaitTimeout()).Should(BeNil())
 
 		if testToUpdate.Status.Conditions == nil {
 			testToUpdate.Status.Conditions = []metav1.Condition{}
@@ -152,7 +153,7 @@ var _ = Describe("DeliverableReconciler", func() {
 			err := c.Get(context.Background(), client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 			Expect(err).NotTo(HaveOccurred())
 			return deliverable.Status.ObservedGeneration == deliverable.Generation
-		}).Should(BeTrue())
+		}, GetWaitTimeout()).Should(BeTrue())
 	}
 
 	var (
@@ -238,7 +239,7 @@ var _ = Describe("DeliverableReconciler", func() {
 				Expect(err).NotTo(HaveOccurred())
 				lastConditions = deliverable.Status.Conditions
 				return deliverable.Status.ObservedGeneration == deliverable.Generation
-			}, 5*time.Second).Should(BeTrue())
+			}, GetWaitTimeout()).Should(BeTrue())
 
 			reconcileAgain()
 
@@ -291,7 +292,7 @@ var _ = Describe("DeliverableReconciler", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					return obj.Status.Conditions
-				}, 5*time.Second).Should(ContainElements(
+				}, GetWaitTimeout()).Should(ContainElements(
 					MatchFields(IgnoreExtras, Fields{
 						"Type":   Equal("ResourcesSubmitted"),
 						"Reason": Equal("MissingValueAtPath"),
@@ -437,7 +438,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"ResourcesSubmitted": MatchFields(IgnoreExtras, Fields{
 								"Status":  Equal(metav1.ConditionFalse),
 								"Reason":  Equal("TemplateStampFailure"),
@@ -470,7 +471,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"ResourcesSubmitted": MatchFields(IgnoreExtras, Fields{
 								"Status":  Equal(metav1.ConditionUnknown),
 								"Reason":  Equal("ConditionNotMet"),
@@ -502,7 +503,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"ResourcesSubmitted": MatchFields(IgnoreExtras, Fields{
 								"Status":  Equal(metav1.ConditionUnknown),
 								"Reason":  Equal("ConditionNotMet"),
@@ -541,7 +542,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"Ready": MatchFields(IgnoreExtras, Fields{
 								"Status": BeEquivalentTo("True"),
 							}),
@@ -633,7 +634,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"ResourcesSubmitted": MatchFields(IgnoreExtras, Fields{
 								"Status":  Equal(metav1.ConditionFalse),
 								"Reason":  Equal("FailedConditionMet"),
@@ -669,7 +670,7 @@ var _ = Describe("DeliverableReconciler", func() {
 						Eventually(func() []metav1.Condition {
 							_ = c.Get(ctx, client.ObjectKey{Name: "deliverable-bob", Namespace: testNS}, deliverable)
 							return deliverable.Status.Conditions
-						}).Should(MatchElements(id, IgnoreExtras, Elements{
+						}, GetWaitTimeout()).Should(MatchElements(id, IgnoreExtras, Elements{
 							"ResourcesSubmitted": MatchFields(IgnoreExtras, Fields{
 								"Status":  Equal(metav1.ConditionFalse),
 								"Reason":  Equal("FailedConditionMet"),

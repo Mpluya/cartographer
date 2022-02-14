@@ -177,6 +177,11 @@ curl -sSLo envtest-bins.tar.gz "https://storage.googleapis.com/kubebuilder-tools
 
 **Note:** `envTest` cannot run pods, so is limited, but is typically all that's needed to test controllers and webhooks.
 
+### Dealing with flaky integration tests
+
+Tests in `test/integration/` use envTest, which is a real APIServer and ETCD instance,
+so they are sometimes slower than ginkgo's 1s timeout. 
+
 
 ### Running integration tests with a complete cluster
 
