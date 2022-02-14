@@ -128,6 +128,7 @@ func (r *Reconciler) reconcileSupplyChain(ctx context.Context, chain *v1alpha1.C
 			}
 		}
 
+		// TODO: Should this be template.Name? What templates should we track?
 		r.DependencyTracker.Track(dependency.Key{
 			GroupKind: schema.GroupKind{
 				Group: v1alpha1.SchemeGroupVersion.Group,
